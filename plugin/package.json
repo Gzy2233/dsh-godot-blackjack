@@ -13,7 +13,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/OWNER/REPO.git"
+    "url": "https://github.com/Gzy2233/dsh-godot-blackjack.git"
   },
   "files": [
     "lib/index.js",
