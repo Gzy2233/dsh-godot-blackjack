@@ -1,7 +1,6 @@
 {
   "name": "dsh-godot-blackjack",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -9,16 +8,33 @@
     "./client": "./lib/client.js",
     "./package.json": "./package.json"
   },
-  "description": "鲸鱼娘 21 点（Godot 版）：一键启动本地游戏，并把 DSH 自己的 DeepSeek 凭据注入游戏进程 —— 玩家不需要再填 API Key",
+  "description": "鲸鱼娘 21 点：DeepSeek Harness 插件。一键启动一个 Godot 单挑黑杰克小游戏，并把 DSH 自己的 DeepSeek 凭据注入游戏进程 —— 玩家不需要填 API Key，也不需要装 Godot（游戏以独立 exe 自动下载）。",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "deepseek",
+    "plugin",
+    "blackjack",
+    "game",
+    "godot",
+    "21点",
+    "鲸鱼娘"
+  ],
   "license": "MIT",
+  "homepage": "https://github.com/Gzy2233/dsh-godot-blackjack",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Gzy2233/dsh-godot-blackjack.git"
+    "url": "https://github.com/Gzy2233/dsh-godot-blackjack.git",
+    "directory": "plugin"
+  },
+  "bugs": {
+    "url": "https://github.com/Gzy2233/dsh-godot-blackjack/issues"
   },
   "files": [
     "lib/index.js",
     "lib/client.js",
-    "cordis.patch.yml"
+    "cordis.patch.yml",
+    "README.md"
   ],
   "dsh": {
     "bundle": {

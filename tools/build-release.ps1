@@ -137,6 +137,12 @@ if ($errCount -gt 0) { Get-Content $e -Encoding UTF8 | Select-Object -First 5 | 
 Ok "stderr 行数 = $errCount"
 if ($errCount -eq 0 -and $autoConnect) { Ok "自动连接 = 生效" } else { Die "冒烟没过（stderr=$errCount, 自动连接=$autoConnect）" }
 
+# BGM 单独断言：编辑器里响、导出版里静音，是"目录扫描在 pck 里不可靠"的经典症状 ——
+# 这种问题**不报错**，光看 stderr 抓不到，必须显式检查那一行。
+$bgmLine = (Get-Content $o -Encoding UTF8 -EA SilentlyContinue | Select-String 'BGM:')
+if ($bgmLine) { Ok ("BGM = 已加载：" + $bgmLine.Line.Trim()) }
+else { Die "冒烟失败：导出版没有 BGM（assets/bgm 没进 pck，或 bj_bgm.gd 又退回纯目录扫描了）" }
+
 Write-Host "`n=== 打包完成 ===" -ForegroundColor Green
 Write-Host "  下一步：把这个 exe 传到 GitHub Release（**不要提交进 git**，108MB 超了单文件限制）："
 Write-Host "    https://github.com/<owner>/<repo>/releases/new"

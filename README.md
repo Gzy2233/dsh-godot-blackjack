@@ -33,12 +33,15 @@
 
 ### 2. 一键安装
 
-> #### ⚠️ 装之前请先**完全退出 DSH**
+> #### ⚠️ 从 GitHub URL 安装会失败，而且**失败后会回滚整个 profile**
 >
-> DSH 把 profile 配置读在内存里 —— **运行期间改配置，它下一次保存就会把你的改动覆盖回去**，
-> 表现是「装完当场有效，过一会儿插件又不见了」。
-> 正确顺序：**退出 DSH → 跑安装脚本 → 打开 DSH**。
-> （脚本自己会检测并拦下来提醒，不用记。）
+> `@deepseek-ai/dsh-plugin-manager` 安装一个 bundle 时，会先改 `profiles/<profile>/package.json`，
+> 再让 pnpm 去拉包。**拉包失败它就把 profile 回滚**（日志在
+> `%DSH_HOME%/profiles/<profile>/.plugin-manager/logs/`，能看到 `codeload.github.com ... error (23)`）。
+> 表现是「装完当时有效，过一会儿插件不见了」—— 不是 DSH 覆盖内存，
+> 是**那次安装失败触发了回滚**。
+>
+> 所以：**用下面的本地安装脚本**（零下载，不存在失败与回滚），或者用 npm 包名安装（见上一节）。
 
 ```powershell
 git clone https://github.com/Gzy2233/dsh-godot-blackjack.git

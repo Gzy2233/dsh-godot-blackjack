@@ -151,9 +151,9 @@ $PatchFile = Join-Path $PluginDst 'cordis.patch.yml'
 if (-not $DryRun -and (Test-Path $PatchFile)) {
   $patch = Get-Content $PatchFile -Raw -Encoding UTF8
   if ($GodotExe -and (Test-Path $GodotExe)) {
-    $patch = [regex]::Replace($patch, "(?m)^(\s*godotExe:\s*).*$", "`${1}'" + ($GodotExe -replace '\\','\\') + "'")
+    $patch = [regex]::Replace($patch, "(?m)^(\s*godotExe:\s*).*$", "`${1}'" + $GodotExe + "'")
   }
-  $patch = [regex]::Replace($patch, "(?m)^(\s*projectDir:\s*).*$", "`${1}'" + ($ProjectDir -replace '\\','\\') + "'")
+  $patch = [regex]::Replace($patch, "(?m)^(\s*projectDir:\s*).*$", "`${1}'" + $ProjectDir + "'")
   [System.IO.File]::WriteAllText($PatchFile, $patch, (New-Object System.Text.UTF8Encoding($false)))
   Ok "已把路径写入 cordis.patch.yml"
 }
