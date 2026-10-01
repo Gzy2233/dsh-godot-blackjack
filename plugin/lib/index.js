@@ -80,10 +80,50 @@ function standaloneCandidates() {
   ].filter(Boolean)
 }
 
+/** 缓存对应的版本标记文件。 */
+function cacheVersionFile() {
+  return path.join(CACHE_DIR, `${STANDALONE_EXE_NAME}.version`)
+}
+
+/** 当前"游戏版本"：优先用 cordis 配置里的 gameVersion，否则用插件版本号。 */
+let expectedGameVersion = ''
+function gameVersion() {
+  if (expectedGameVersion) return expectedGameVersion
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(PACKAGE_ROOT, 'package.json'), 'utf8'))
+    return String(pkg.version || '0')
+  } catch {
+    return '0'
+  }
+}
+
+function cacheVersionMatches() {
+  try {
+    return fs.readFileSync(cacheVersionFile(), 'utf8').trim() === gameVersion()
+  } catch {
+    return false   // 没有版本文件 = 老缓存，一律当作过期
+  }
+}
+
+function writeCacheVersion() {
+  try {
+    fs.writeFileSync(cacheVersionFile(), gameVersion())
+  } catch { /* 写不了就算了，顶多下次再下一次 */ }
+}
+
+
 function findStandaloneExe() {
   for (const candidate of standaloneCandidates()) {
     try {
-      if (fs.existsSync(candidate)) return candidate
+      if (!fs.existsSync(candidate)) continue
+      // **缓存那份必须核对版本** —— 不然玩家会永远卡在第一次下载的那一版。
+      // 实测踩过：Release 上已经是修好 BGM 的新 exe，但本地缓存还是旧的，
+      // 插件优先用缓存 → 玩家一直玩着旧版，还以为是新代码没生效。
+      if (candidate === path.join(CACHE_DIR, STANDALONE_EXE_NAME) && !cacheVersionMatches()) {
+        log('缓存的独立版与当前版本不一致，忽略它、准备重新下载')
+        continue
+      }
+      return candidate
     } catch { /* 忽略 */ }
   }
   return ''
@@ -140,6 +180,7 @@ async function downloadStandaloneExe(baseUrl) {
   try {
     await fetchAndInflate(`${baseUrl}.deflate`, partial)
     fs.renameSync(partial, target)
+    writeCacheVersion()
     log(`下载并解压完成：${target}（${Math.round(fs.statSync(target).size / 1048576)}MB）`)
     return target
   } catch (err) {
@@ -167,6 +208,7 @@ async function downloadStandaloneExe(baseUrl) {
   }
   fs.writeFileSync(partial, Buffer.concat(chunks))
   fs.renameSync(partial, target)
+  writeCacheVersion()
   log(`下载完成：${target}（${Math.round(received / 1048576)}MB）`)
   return target
 }
@@ -339,6 +381,7 @@ export function apply(ctx, config = {}) {
   // 不用先去改 cordis.patch.yml。
   const projectDir = resolveProjectDir(config.projectDir)
   const godotExe = String(config.godotExe || '').trim() || findGodotExe()
+  expectedGameVersion = String(config.gameVersion || '').trim()
   const baseURL = String(config.baseURL || '').trim()
   const model = String(config.model || '').trim()
 
