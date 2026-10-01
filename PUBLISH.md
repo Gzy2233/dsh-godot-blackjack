@@ -36,14 +36,29 @@ powershell -ExecutionPolicy Bypass -File tools\build-release.ps1
 
 1. 打开 `https://github.com/<你的用户名>/<仓库名>/releases/new`
 2. Tag 随便写（如 `v1.0.0`），标题写「鲸鱼娘 21 点 v1.0.0」
-3. **附件上传 `dist\BlackjackWhale.exe`** —— 名字必须一模一样
+3. **附件要传两个**（名字必须一模一样）：
+
+   | 附件 | 大小 | 作用 |
+   |---|---|---|
+   | **`BlackjackWhale.exe.deflate`** | 40MB | **插件优先下这个** —— 国内 0.2MB/s 的链路上从「9 分钟且容易断」变成「3 分多钟」 |
+   | `BlackjackWhale.exe` | 108MB | 兜底：压缩版 404 时插件自动退回下它；也方便别人直接下来双击玩 |
+
 4. 发布
 
-插件的下载地址是 `.../releases/latest/download/BlackjackWhale.exe`，
-所以**附件名**和 **`plugin/package.json` 里的 `repository.url`** 这两处必须对。
+插件拼的地址是（先试上面那个，失败再退下面）：
 
-> 想放别处（自己的服务器、国内网盘直链）也行：在 `cordis.patch.yml` 里填 `config.downloadURL`。
-> 国内用户下 Release 直链可能很慢，这是目前体验上最需要你自己权衡的一点。
+```
+.../releases/latest/download/BlackjackWhale.exe.deflate   ← 优先
+.../releases/latest/download/BlackjackWhale.exe           ← 兜底
+```
+
+所以**附件名**和 **`plugin/package.json` 里的 `repository.url`** 这两处必须对。
+`tools/build-release.ps1` 会同时产出这两个文件，并在本地做**回环校验**
+（用 Node 的 `inflateRaw` 解开、比 SHA256 ✓ 保证传上去一定解得开 ✓）。
+
+> 想放别处（自己的服务器、国内网盘直链）也行：在 `cordis.patch.yml` 里填 `config.downloadURL`
+> （填**不带 `.deflate` 的基址**即可，插件会自己先试 `.deflate`）。
+> 国内下 GitHub Release 直链确实慢，这是目前体验上最需要你自己权衡的一点。
 
 ## 第 3 步：推代码
 

@@ -33,11 +33,26 @@
 
 ### 2. 一键安装
 
+> #### ⚠️ 装之前请先**完全退出 DSH**
+>
+> DSH 把 profile 配置读在内存里 —— **运行期间改配置，它下一次保存就会把你的改动覆盖回去**，
+> 表现是「装完当场有效，过一会儿插件又不见了」。
+> 正确顺序：**退出 DSH → 跑安装脚本 → 打开 DSH**。
+> （脚本自己会检测并拦下来提醒，不用记。）
+
 ```powershell
-git clone https://github.com/<你的用户名>/dsh-godot-blackjack.git
+git clone https://github.com/Gzy2233/dsh-godot-blackjack.git
 cd dsh-godot-blackjack
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
+
+> 没有 git？在 GitHub 页面上点 **Code → Download ZIP**，解压后进目录跑同一行命令。
+
+> #### ⛔ 不要用 DSH 侧边栏 Plugins 页里的「从 GitHub 安装」
+>
+> 那条路会让 pnpm 去 `codeload.github.com` 拉 tarball —— 国内网络**几乎必然超时**
+> （`error (23) The operation was aborted due to timeout`，重试两次后放弃）。
+> 本脚本走的是**本地链接**（`link:<本地目录>`），零下载，不受网络影响。
 
 > 没有 git？在 GitHub 页面上点 **Code → Download ZIP**，解压后进目录跑同一行命令。
 

@@ -28,6 +28,8 @@ import { spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import zlib from 'node:zlib'
+import { pipeline } from 'node:stream/promises'
 import { fileURLToPath } from 'node:url'
 
 export const name = 'dsh-godot-blackjack'
@@ -119,21 +121,41 @@ function readRepositoryUrl() {
   }
 }
 
-/** 下载独立版 exe 到缓存目录。返回路径。 */
-async function downloadStandaloneExe(url) {
+/**
+ * 下载独立版 exe 到缓存目录。
+ *
+ * **优先下压缩版（`.deflate`，约 40MB）**，下不到才退回原始 exe（108MB）。
+ * 为什么值得：Godot 的 exe 实测能压到 37%，而国内直连 GitHub 只有 ~0.2MB/s ——
+ * 108MB 要 9 分钟且很容易中途断掉，40MB 只要 3 分多钟、存活率高得多。
+ *
+ * 压缩格式就是**裸 deflate**（PowerShell 的 `DeflateStream` 写的），
+ * Node 内置 `zlib` 直接解，不需要任何第三方库（插件只允许 node: 内置模块）。
+ */
+async function downloadStandaloneExe(baseUrl) {
   fs.mkdirSync(CACHE_DIR, { recursive: true })
   const target = path.join(CACHE_DIR, STANDALONE_EXE_NAME)
   const partial = `${target}.part`
-  log(`正在下载独立版游戏（约 90MB，只下一次）：${url}`)
 
-  const response = await fetch(url, { redirect: 'follow' })
+  // ① 先试压缩版
+  try {
+    await fetchAndInflate(`${baseUrl}.deflate`, partial)
+    fs.renameSync(partial, target)
+    log(`下载并解压完成：${target}（${Math.round(fs.statSync(target).size / 1048576)}MB）`)
+    return target
+  } catch (err) {
+    if (fs.existsSync(partial)) fs.rmSync(partial, { force: true })
+    log(`压缩版不可用（${err?.message ?? err}），改下原始 exe…`)
+  }
+
+  // ② 退回原始 exe
+  const response = await fetch(baseUrl, { redirect: 'follow' })
   if (!response.ok) {
-    throw new Error(`下载失败 HTTP ${response.status}（Release 里有没有 ${STANDALONE_EXE_NAME}？）`)
+    throw new Error(`下载失败 HTTP ${response.status}（Release 里有没有 ${STANDALONE_EXE_NAME}[.deflate]？）`)
   }
   const total = Number(response.headers.get('content-length') || 0)
-  const chunks = []
   let received = 0
   let lastLog = 0
+  const chunks = []
   for await (const chunk of response.body) {
     chunks.push(chunk)
     received += chunk.length
@@ -147,6 +169,31 @@ async function downloadStandaloneExe(url) {
   fs.renameSync(partial, target)
   log(`下载完成：${target}（${Math.round(received / 1048576)}MB）`)
   return target
+}
+
+/** 流式下载裸 deflate 并边下边解压（不把 108MB 全塞进内存）。 */
+async function fetchAndInflate(url, outPath) {
+  const response = await fetch(url, { redirect: 'follow' })
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  const total = Number(response.headers.get('content-length') || 0)
+  log(`下载压缩版（约 ${total ? Math.round(total / 1048576) : 40}MB，只下一次）…`)
+
+  let received = 0
+  let lastLog = 0
+  const source = response.body
+  if (typeof source.on === 'function') {
+    source.on('data', (chunk) => {
+      received += chunk.length
+      const percent = total ? Math.floor((received / total) * 100) : 0
+      if (percent >= lastLog + 25) {
+        lastLog = percent
+        log(`下载中 ${percent}%（${Math.round(received / 1048576)}MB）`)
+      }
+    })
+  }
+
+  await pipeline(source, zlib.createInflateRaw(), fs.createWriteStream(outPath))
+  return outPath
 }
 
 // ────────────────────────────────────────────────────────────── 自动探测

@@ -31,7 +31,25 @@ function Die($msg)  { Write-Host "  [X]  $msg"   -ForegroundColor Red; exit 1 }
 Write-Host ""
 Write-Host "=== 鲸鱼娘 21 点 · DSH 插件安装器 ===" -ForegroundColor Cyan
 
-# ---------------------------------------------------------------- 0. 找 DSH
+# ---------------------------------------------------------------- 0. DSH 必须先关掉
+# ⚠️ 这一条是踩出来的：DSH 把 profile 的 package.json **读进内存**，
+#    运行期间改这个文件，它下一次保存（比如你在 Plugins 页点了什么）就会把你的改动覆盖回去 ——
+#    表现是"装完当时是好的，过一会儿插件又没了"。
+#    所以：**关掉 DSH 再装，装完再开**。
+$running = @(Get-CimInstance Win32_Process -Filter "Name LIKE 'deepseek%' OR Name LIKE 'DSH%'" -ErrorAction SilentlyContinue)
+if ($running.Count -gt 0) {
+  Warn "检测到 DeepSeek Harness 正在运行（PID: $($running.ProcessId -join ', ')）"
+  Write-Host ""
+  Write-Host "  ⚠️  请先完全退出 DSH 再运行本脚本。" -ForegroundColor Yellow
+  Write-Host "     原因：DSH 把 profile 配置读在内存里，运行期间改会被它覆盖回去 ——" -ForegroundColor DarkGray
+  Write-Host "     表现就是「装完当场有效，过一会儿插件又不见了」。" -ForegroundColor DarkGray
+  Write-Host ""
+  Write-Host "     退出 DSH → 重新运行本脚本 → 再打开 DSH。" -ForegroundColor Yellow
+  Write-Host ""
+  if (-not $DryRun) { exit 2 }
+}
+
+# ---------------------------------------------------------------- 0b. 找 DSH
 $DshHome = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }
 if (-not (Test-Path $DshHome)) { Die "找不到 DSH 目录：$DshHome（先运行一次 DeepSeek Harness）" }
 $ProfileName = if ($env:DSH_PROFILE) { $env:DSH_PROFILE } else { 'desktop' }

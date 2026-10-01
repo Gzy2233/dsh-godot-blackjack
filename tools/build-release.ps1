@@ -91,6 +91,37 @@ $out = Join-Path $DistDir 'BlackjackWhale.exe'
 if (-not (Test-Path $out)) { Die "导出失败（装了导出模板吗？编辑器 → 编辑器 → 管理导出模板）" }
 Ok ("产物 " + [math]::Round((Get-Item $out).Length/1MB,1) + " MB → $out")
 
+# ── 4b. 同时产出**裸 deflate 压缩版**（`BlackjackWhale.exe.deflate`）
+# 插件会优先下载这个：108MB -> 约 40MB。国内直连 GitHub 只有 ~0.2MB/s 时，
+# 这是"9 分钟且容易断"和"3 分多钟、存活率高"的差别。
+#
+# 格式：.NET DeflateStream = **裸 deflate**（不带 zlib/gzip 头），
+# Node 端 `zlib.createInflateRaw()` 正好能解，插件因此零第三方依赖。
+# ⚠️ 两个坑：① CompressionLevel 所在的程序集在 PowerShell 5.1 里必须先 Add-Type；
+#           ② `SmallestSize` 是 .NET Core 才有的枚举值，5.1 会报"找不到重载"，所以用 Optimal
+#              （实测 Optimal 也能到 37%，和 Python zlib level 9 一样）。
+Add-Type -AssemblyName System.IO.Compression
+$deflateOut = "$out.deflate"
+Remove-Item $deflateOut -Force -EA SilentlyContinue
+Say "生成压缩版（约 5 秒）…"
+$inStream = [System.IO.File]::OpenRead($out)
+$outStream = [System.IO.File]::Create($deflateOut)
+$ds = New-Object System.IO.Compression.DeflateStream($outStream, [System.IO.Compression.CompressionLevel]::Optimal)
+try { $inStream.CopyTo($ds) } finally { $ds.Dispose(); $outStream.Dispose(); $inStream.Dispose() }
+$ratio = [math]::Round(100 * (Get-Item $deflateOut).Length / (Get-Item $out).Length)
+Ok ("压缩版 " + [math]::Round((Get-Item $deflateOut).Length/1MB,1) + " MB（原体积的 $ratio%）")
+
+# ── 4c. 回环校验：用 Node 的 inflateRaw 解开，SHA256 必须和原 exe 一致。
+# 少了这一步，可能就是"传到 Release 上解不开"——而那时玩家已经在下载了。
+Say "回环校验（deflate → Node inflateRaw → 比哈希）…"
+$srcHash = (Get-FileHash $out -Algorithm SHA256).Hash
+$check = & node -e "const fs=require('fs'),z=require('zlib'),c=require('crypto');const raw=z.inflateRawSync(fs.readFileSync(process.argv[1]));process.stdout.write(c.createHash('sha256').update(raw).digest('hex').toUpperCase())" $deflateOut
+if (($check -join '').Trim() -ne $srcHash) {
+  Remove-Item $deflateOut -Force -EA SilentlyContinue
+  Die "回环校验失败：解压结果和原 exe 不一致（已删掉压缩版，别上传它）"
+}
+Ok "回环校验通过：Node 能正确解开，哈希一致"
+
 # ── 5. 冒烟：真跑一次，确认没有 stderr、且自动连接有效
 Say "冒烟测试（启动 9 秒，检查 stderr 与自动连接）…"
 $env:DEEPSEEK_API_KEY = 'sk-build-smoke'
