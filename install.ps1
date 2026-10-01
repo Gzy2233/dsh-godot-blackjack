@@ -140,6 +140,23 @@ if (-not $DryRun -and (Test-Path $PatchFile)) {
   Ok "已把路径写入 cordis.patch.yml"
 }
 
+# 顺带把本地已构建的独立版 exe 预放进下载缓存 ——
+# 这样**作者自己**装完是秒开；普通玩家没有这个文件，插件会从 GitHub Release 下载。
+if (-not $DryRun) {
+  $localExe = Join-Path $RepoRoot 'dist\BlackjackWhale.exe'
+  $cacheDir = Join-Path $env:LOCALAPPDATA 'dsh-godot-blackjack'
+  $cacheExe = Join-Path $cacheDir 'BlackjackWhale.exe'
+  if ((Test-Path $localExe) -and -not (Test-Path $cacheExe)) {
+    New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
+    Copy-Item $localExe $cacheExe -Force
+    Ok ("已把本地独立版放进缓存（" + [math]::Round((Get-Item $cacheExe).Length/1MB,1) + " MB）→ 首次启动不用下载")
+  } elseif (Test-Path $cacheExe) {
+    Ok "独立版已在缓存里（首次启动不用下载）"
+  } else {
+    Say "本地没有独立版 exe —— 首次点按钮时会从 GitHub Release 下载（约 108MB）"
+  }
+}
+
 # ---------------------------------------------------------------- 5. 注册 bundle
 Write-Host "`n-- 4/4 注册到 profile --" -ForegroundColor Cyan
 $raw = Get-Content $ProfileJson -Raw -Encoding UTF8
