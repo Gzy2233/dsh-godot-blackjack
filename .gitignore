@@ -1,0 +1,22 @@
+# 生成物与本地缓存 —— 不要提交
+.godot/
+*.translation
+
+# 导出产物
+build/
+export/
+*.pck
+*.exe
+
+# 编辑器/系统杂物
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*~
+__pycache__/
+*.pyc
+
+# 打包产物
+dist/
+*.zip

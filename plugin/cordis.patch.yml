@@ -1,0 +1,34 @@
+# dsh-godot-blackjack 的挂载声明 + 配置。
+#
+# 这个文件是 **live 热生效**的：改完存盘即生效，不用重启 DSH。
+# （但 lib/index.js 的代码改动必须重启 —— dsh-base 里 cordis-plugin-hmr 是 disabled。）
+#
+# ┌──────────────────────────────────────────────────────────────────────┐
+# │ 独立版（推荐，玩家不需要装 Godot）：                                     │
+# │   插件优先跑 game/BlackjackWhale.exe；没有就从本仓库的 GitHub Release    │
+# │   下载到 %LOCALAPPDATA%\dsh-godot-blackjack\（一次，约 90MB）。          │
+# │   下载地址由 package.json 里的 repository 推导，所以只要把下面那行的      │
+# │   OWNER/REPO 改成你的仓库就行（或在这里填 downloadURL 覆盖）。           │
+# │                                                                        │
+# │ 开发者模式（本机有 Godot）：把 godotExe 填上，就会直接跑工程目录。        │
+# └──────────────────────────────────────────────────────────────────────┘
+- insert:
+    - id: dsh-godot-blackjack
+      name: dsh-godot-blackjack
+      config:
+        # ① Godot 可执行文件。留空 = 自动探测；填了 = 优先跑工程目录（开发者用）。
+        godotExe: ''
+        # ② 游戏工程目录（里面有 project.godot）。留空 = 用插件包旁边的 game/。
+        projectDir: ''
+        # ③ 独立版 exe 的下载地址。留空 = 用 package.json 的 repository 推导
+        #    （https://github.com/<owner>/<repo>/releases/latest/download/BlackjackWhale.exe）。
+        downloadURL: ''
+        # ④ 传给游戏的 DeepSeek 端点与模型名。
+        #    留空 = 用游戏内置默认值（https://api.deepseek.com + deepseek-chat）。
+        baseURL: 'https://api.deepseek.com'
+        model: ''
+        # ④ 启动 DSH 时是否直接拉起游戏。默认 false：玩家点界面右下角的「🐋 鲸鱼娘 21 点」再启动。
+        autoLaunch: false
+        # ⑤ 排障：把游戏自己的 stdout 转发到 DSH 日志
+        #    （游戏启动时会打印「已自动连接 DSH」，用它一眼确认凭据送到了）。
+        logGameOutput: false

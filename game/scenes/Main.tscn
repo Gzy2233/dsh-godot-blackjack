@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://cioje3m428vou"]
+
+[ext_resource type="Script" uid="uid://d5r8tlcad7mu" path="res://scripts/ui/bj_table_view.gd" id="1_elqb8"]
+
+[node name="Main" type="Control" unique_id=1506408855]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_elqb8")

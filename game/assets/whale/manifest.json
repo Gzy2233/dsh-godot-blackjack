@@ -1,0 +1,16 @@
+{
+  "frameWidth": 48,
+  "frameHeight": 57,
+  "scale": 4,
+  "_说明": "每个情绪一个横向 sprite sheet。frames/fps 可调速度。几何信息（frameWidth/frameHeight/frames）即使本文件缺失或损坏，build.mjs 也会自动从 PNG 自身推导。",
+  "emotions": {
+    "idle": { "file": "idle.png", "frames": 1, "fps": 6, "loop": true },
+    "thinking": { "file": "thinking.png", "frames": 1, "fps": 8, "loop": true },
+    "smug": { "file": "smug.png", "frames": 1, "fps": 6, "loop": true },
+    "panic": { "file": "panic.png", "frames": 1, "fps": 12, "loop": true },
+    "sad": { "file": "sad.png", "frames": 4, "fps": 5, "loop": true },
+    "shocked": { "file": "shocked.png", "frames": 1, "fps": 6, "loop": true },
+    "angry": { "file": "angry.png", "frames": 4, "fps": 8, "loop": true },
+    "black": { "file": "black.png", "frames": 4, "fps": 10, "loop": true }
+  }
+}
